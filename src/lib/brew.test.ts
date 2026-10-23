@@ -1,0 +1,134 @@
+import { describe, expect, it } from "vitest";
+import {
+  activeStep,
+  beverageYield,
+  brewFor,
+  schedule,
+  servings,
+  setCoffee,
+  setRatio,
+  setServings,
+  setWater,
+  switchMethod,
+  totalTime,
+} from "./brew";
+import { getMethod, methods } from "./methods";
+
+describe("ratio math", () => {
+  it("derives water from coffee", () => {
+    const brew = setCoffee(brewFor("v60"), 20);
+    expect(brew.water).toBe(320);
+    expect(brew.lock).toBe("coffee");
+  });
+
+  it("derives coffee from water", () => {
+    const brew = setWater(brewFor("v60"), 500);
+    expect(brew.coffee).toBeCloseTo(31.25);
+    expect(brew.lock).toBe("water");
+  });
+
+  it("keeps whichever side was set last when the ratio changes", () => {
+    const byCoffee = setRatio(setCoffee(brewFor("v60"), 20), 15);
+    expect(byCoffee).toMatchObject({ coffee: 20, water: 300 });
+
+    const byWater = setRatio(setWater(brewFor("v60"), 300), 15);
+    expect(byWater).toMatchObject({ water: 300, coffee: 20 });
+  });
+
+  it("ignores zero, negative, and non-numeric input", () => {
+    const brew = brewFor("v60");
+    expect(setCoffee(brew, 0)).toBe(brew);
+    expect(setWater(brew, -5)).toBe(brew);
+    expect(setRatio(brew, Number.NaN)).toBe(brew);
+    expect(setServings(brew, Infinity)).toBe(brew);
+  });
+});
+
+describe("servings", () => {
+  it("measures filter coffee in cups of water", () => {
+    const brew = setServings(brewFor("chemex"), 3);
+    expect(brew.water).toBe(750);
+    expect(servings(brew)).toBe(3);
+  });
+
+  it("measures espresso in doses of coffee", () => {
+    const brew = setServings(brewFor("espresso"), 2);
+    expect(brew).toMatchObject({ coffee: 36, water: 72 });
+    expect(servings(brew)).toBe(2);
+  });
+
+  it("starts every method at its default size", () => {
+    for (const method of methods) {
+      expect(servings(brewFor(method.id))).toBeCloseTo(method.defaultServings);
+    }
+  });
+});
+
+describe("switching methods", () => {
+  it("keeps the amount of water between filter methods", () => {
+    const brew = switchMethod(setWater(brewFor("v60"), 500), "french-press");
+    expect(brew).toMatchObject({ method: "french-press", water: 500, ratio: 15 });
+    expect(brew.coffee).toBeCloseTo(33.33, 2);
+  });
+
+  it("starts espresso fresh rather than pulling a 500 g shot", () => {
+    const brew = switchMethod(setWater(brewFor("v60"), 500), "espresso");
+    expect(brew).toEqual(brewFor("espresso"));
+    expect(switchMethod(brew, "v60")).toEqual(brewFor("v60"));
+  });
+
+  it("returns the same brew when the method doesn't change", () => {
+    const brew = brewFor("aeropress");
+    expect(switchMethod(brew, "aeropress")).toBe(brew);
+  });
+});
+
+describe("yield", () => {
+  it("subtracts what the grounds soak up", () => {
+    expect(beverageYield(setCoffee(brewFor("v60"), 20))).toBe(280);
+  });
+
+  it("treats espresso's water as the yield itself", () => {
+    expect(beverageYield(brewFor("espresso"))).toBe(36);
+  });
+
+  it("never goes negative on a silly ratio", () => {
+    expect(beverageYield(setRatio(brewFor("aeropress"), 1))).toBe(0);
+  });
+});
+
+describe("schedule", () => {
+  it("fills in running pour targets", () => {
+    const steps = schedule(setCoffee(brewFor("v60"), 20));
+    expect(steps.map((s) => s.target)).toEqual([40, 192, 320, undefined, undefined]);
+  });
+
+  it("caps the bloom at the total water", () => {
+    const [bloom] = schedule(setRatio(setCoffee(brewFor("v60"), 20), 1.5));
+    expect(bloom.target).toBe(30);
+  });
+
+  it("knows how long each step lasts", () => {
+    const steps = schedule(brewFor("french-press"));
+    expect(steps.map((s) => s.duration)).toEqual([240, 30, null]);
+  });
+
+  it("finds the active step for an elapsed time", () => {
+    const steps = getMethod("v60").steps;
+    expect(activeStep(steps, -1)).toBe(-1);
+    expect(activeStep(steps, 0)).toBe(0);
+    expect(activeStep(steps, 44.9)).toBe(0);
+    expect(activeStep(steps, 45)).toBe(1);
+    expect(activeStep(steps, 9999)).toBe(steps.length - 1);
+  });
+
+  it("every method's steps are in order and end with the full pour", () => {
+    for (const method of methods) {
+      const times = method.steps.map((s) => s.at);
+      expect(times).toEqual([...times].sort((a, b) => a - b));
+      const targets = schedule(brewFor(method.id)).flatMap((s) => s.target ?? []);
+      expect(targets.at(-1)).toBeCloseTo(brewFor(method.id).water);
+      expect(totalTime(method)).toBe(times.at(-1));
+    }
+  });
+});

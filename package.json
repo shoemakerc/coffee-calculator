@@ -1,20 +1,27 @@
 {
-  "name": "my-app",
-  "version": "0.1.0",
+  "name": "coffee-calculator",
+  "version": "1.0.0",
   "private": true,
-  "dependencies": {
-    "gh-pages": "^1.0.0",
-    "react": "^15.6.1",
-    "react-dom": "^15.6.1",
-    "react-scripts": "1.0.10"
-  },
+  "description": "A calculator for making good coffee.",
   "scripts": {
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run"
   },
-  "homepage": "https://shoemakerc.github.io/react-playground"
+  "dependencies": {
+    "next": "16.4.2",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.2",
+    "typescript": "^5",
+    "vitest": "^3"
+  }
 }
