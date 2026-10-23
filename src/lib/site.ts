@@ -11,6 +11,7 @@ export const site = {
   nav: [
     { label: "Writing", path: "/music/" },
     { label: "Listening", path: "/#listening" },
+    { label: "Reading", path: "/reading/" },
     { label: "Projects", path: "/projects/" },
     { label: "About", path: "/about/" },
   ],
