@@ -3,7 +3,7 @@
 Ratios, recipes, and a brew timer for making good coffee:
 **[shoemakerc.github.io/coffee-calculator](https://shoemakerc.github.io/coffee-calculator/)**
 
-- **Six methods:** V60, Chemex, French press, AeroPress, espresso, and cold brew, each with a house ratio, grind, and water temperature.
+- **Seven methods:** V60, Chemex, French press, AeroPress, espresso, moka pot (3-cup and 6-cup), and cold brew, each with a house ratio, grind, and water temperature.
 - **Linked numbers:** change the coffee, water, ratio, or number of cups, and the rest follow. Whichever of coffee or water you set last is held when the ratio moves. Arrow keys nudge a field (hold Shift for bigger steps).
 - **Pour schedule and timer:** each step shows a running weight target for your scale, with an optional chime when it's time for the next pour.
 - **Units:** grams or ounces, °C or °F.

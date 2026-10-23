@@ -10,6 +10,7 @@ export type MethodId =
   | "french-press"
   | "aeropress"
   | "espresso"
+  | "moka"
   | "cold-brew";
 
 /** How much water a step should bring the total to. */
@@ -25,10 +26,21 @@ export type Step = {
   pour?: PourTarget;
 };
 
-/** What one "serving" means: a cup of water, or a dose of coffee. */
+/**
+ * A size of a fixed-size brewer, like a moka pot. The pot sets the amounts:
+ * a level basket of coffee, and water up to the valve.
+ */
+export type PotSize = { label: string; coffee: number; water: number };
+
+/**
+ * What one "serving" means: a cup of water, a dose of coffee, or a whole
+ * pot. `default` is how many servings a fresh brew starts with. A pot
+ * starts at its first size.
+ */
 export type Serving =
-  | { kind: "water"; grams: number; label: string }
-  | { kind: "coffee"; grams: number; label: string };
+  | { kind: "water"; grams: number; label: string; default: number }
+  | { kind: "coffee"; grams: number; label: string; default: number }
+  | { kind: "pot"; sizes: PotSize[] };
 
 export type Method = {
   id: MethodId;
@@ -44,7 +56,6 @@ export type Method = {
   /** Water temperature in °C, or null for no heat. */
   tempC: number | null;
   serving: Serving;
-  defaultServings: number;
   /** Whether the step list is short enough to run a live timer against. */
   timed: boolean;
   /** For espresso the "water" is what ends up in the cup, not what goes in. */
@@ -67,8 +78,7 @@ export const methods: Method[] = [
     ratioRange: [12, 20],
     grind: "Medium-fine, like table salt",
     tempC: 94,
-    serving: { kind: "water", grams: 250, label: "cup" },
-    defaultServings: 1,
+    serving: { kind: "water", grams: 250, label: "cup", default: 1 },
     timed: true,
     waterIsYield: false,
     steps: [
@@ -88,8 +98,7 @@ export const methods: Method[] = [
     ratioRange: [13, 19],
     grind: "Medium-coarse, like kosher salt",
     tempC: 95,
-    serving: { kind: "water", grams: 250, label: "cup" },
-    defaultServings: 2,
+    serving: { kind: "water", grams: 250, label: "cup", default: 2 },
     timed: true,
     waterIsYield: false,
     steps: [
@@ -109,8 +118,7 @@ export const methods: Method[] = [
     ratioRange: [10, 18],
     grind: "Coarse, like breadcrumbs",
     tempC: 95,
-    serving: { kind: "water", grams: 250, label: "cup" },
-    defaultServings: 2,
+    serving: { kind: "water", grams: 250, label: "cup", default: 2 },
     timed: true,
     waterIsYield: false,
     steps: [
@@ -128,8 +136,7 @@ export const methods: Method[] = [
     ratioRange: [6, 18],
     grind: "Medium-fine",
     tempC: 90,
-    serving: { kind: "water", grams: 230, label: "mug" },
-    defaultServings: 1,
+    serving: { kind: "water", grams: 230, label: "mug", default: 1 },
     timed: true,
     waterIsYield: false,
     steps: [
@@ -149,14 +156,43 @@ export const methods: Method[] = [
     ratioRange: [1, 4],
     grind: "Fine, like powdered sugar",
     tempC: 93,
-    serving: { kind: "coffee", grams: 18, label: "shot" },
-    defaultServings: 1,
+    serving: { kind: "coffee", grams: 18, label: "shot", default: 1 },
     timed: true,
     waterIsYield: true,
     yieldNote: "This is a weight target for the cup. Put a scale under it.",
     steps: [
       { at: 0, title: "Start the shot", detail: "First drops should show up within 5–8 seconds." },
       { at: 28, title: "Stop at the target", detail: "Under 25 seconds: grind finer. Over 32: coarser.", pour: to(1) },
+    ],
+  },
+  {
+    id: "moka",
+    name: "Moka pot",
+    short: "Moka",
+    blurb: "Stovetop and strong. Your pot sets the amounts: a level basket of coffee, and water up to the valve.",
+    ratio: 10,
+    ratioRange: [8, 12],
+    grind: "Fine, a little coarser than espresso",
+    tempC: 100,
+    // Sizes for a Bialetti Moka Express. Other pots vary a little: weigh a
+    // level basket and the water up to the valve to check yours.
+    serving: {
+      kind: "pot",
+      sizes: [
+        { label: "3-cup", coffee: 15, water: 150 },
+        { label: "6-cup", coffee: 30, water: 300 },
+      ],
+    },
+    timed: true,
+    waterIsYield: false,
+    yieldNote: "Strong. A moka “cup” is espresso-sized, so top it up with hot water if you like.",
+    steps: [
+      { at: 0, title: "Fill the base", detail: "Just-boiled water, up to just below the valve.", pour: to(1) },
+      { at: 20, title: "Add the coffee", detail: "Fill the basket and level it off. Don’t tamp it down." },
+      { at: 40, title: "Onto the heat", detail: "Screw the top on with a towel, since the base is hot. Medium heat, lid open." },
+      { at: 120, title: "It starts to flow", detail: "Slow and steady, like honey. If it spits, turn the heat down. A 6-cup takes a little longer." },
+      { at: 210, title: "Off the heat", detail: "When the stream turns pale and starts to gurgle. Cool the base under a cold tap to stop it." },
+      { at: 240, title: "Stir and serve", detail: "Stir the top chamber first, so the first and last of it mix." },
     ],
   },
   {
@@ -168,8 +204,7 @@ export const methods: Method[] = [
     ratioRange: [4, 12],
     grind: "Extra-coarse, like peppercorns",
     tempC: null,
-    serving: { kind: "water", grams: 250, label: "batch" },
-    defaultServings: 4,
+    serving: { kind: "water", grams: 250, label: "batch", default: 4 },
     timed: false,
     waterIsYield: false,
     yieldNote: "Concentrate. Dilute about 1:1 to serve.",

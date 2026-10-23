@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(site.appUrl),
   title: `Coffee Calculator · ${site.name}`,
   description:
-    "Ratios, recipes, and a brew timer for pour-over, French press, AeroPress, espresso, and cold brew.",
+    "Ratios, recipes, and a brew timer for pour-over, French press, AeroPress, espresso, moka pot, and cold brew.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

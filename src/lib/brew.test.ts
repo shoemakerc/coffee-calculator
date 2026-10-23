@@ -3,6 +3,8 @@ import {
   activeStep,
   beverageYield,
   brewFor,
+  fillPot,
+  potSize,
   schedule,
   servings,
   setCoffee,
@@ -59,8 +61,47 @@ describe("servings", () => {
 
   it("starts every method at its default size", () => {
     for (const method of methods) {
-      expect(servings(brewFor(method.id))).toBeCloseTo(method.defaultServings);
+      const brew = brewFor(method.id);
+      if (method.serving.kind === "pot") expect(potSize(brew)).toBe(method.serving.sizes[0]);
+      else expect(servings(brew)).toBeCloseTo(method.serving.default);
     }
+  });
+});
+
+describe("moka pot", () => {
+  const sizes = (() => {
+    const { serving } = getMethod("moka");
+    if (serving.kind !== "pot") throw new Error("The moka pot should come in sizes");
+    return serving.sizes;
+  })();
+
+  it("starts with the small pot, filled to the valve", () => {
+    const brew = brewFor("moka");
+    expect(brew).toMatchObject({ coffee: 15, water: 150, ratio: 10, lock: "coffee" });
+    expect(potSize(brew)?.label).toBe("3-cup");
+  });
+
+  it("switches between pot sizes", () => {
+    const brew = fillPot(brewFor("moka"), sizes[1]);
+    expect(brew).toMatchObject({ coffee: 30, water: 300, ratio: 10 });
+    expect(potSize(brew)?.label).toBe("6-cup");
+    expect(potSize(fillPot(brew, sizes[0]))?.label).toBe("3-cup");
+  });
+
+  it("stops matching a size once the amounts change by hand", () => {
+    const brew = setRatio(brewFor("moka"), 9);
+    expect(brew).toMatchObject({ coffee: 15, water: 135 });
+    expect(potSize(brew)).toBeNull();
+  });
+
+  it("makes one potful rather than a number of cups", () => {
+    const brew = brewFor("moka");
+    expect(servings(brew)).toBe(1);
+    expect(setServings(brew, 2)).toBe(brew);
+  });
+
+  it("only has sizes for pots", () => {
+    expect(potSize(brewFor("v60"))).toBeNull();
   });
 });
 
@@ -74,6 +115,12 @@ describe("switching methods", () => {
   it("starts espresso fresh rather than pulling a 500 g shot", () => {
     const brew = switchMethod(setWater(brewFor("v60"), 500), "espresso");
     expect(brew).toEqual(brewFor("espresso"));
+    expect(switchMethod(brew, "v60")).toEqual(brewFor("v60"));
+  });
+
+  it("starts the moka pot at a size rather than carrying cups over", () => {
+    const brew = switchMethod(setWater(brewFor("v60"), 500), "moka");
+    expect(brew).toEqual(brewFor("moka"));
     expect(switchMethod(brew, "v60")).toEqual(brewFor("v60"));
   });
 

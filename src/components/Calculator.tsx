@@ -4,6 +4,8 @@ import { useMemo, useRef, useState, type FormEvent } from "react";
 import {
   beverageYield,
   brewFor,
+  fillPot,
+  potSize,
   schedule,
   servings,
   setCoffee,
@@ -47,16 +49,19 @@ export function Calculator() {
   const top = useRef<HTMLDivElement>(null);
 
   const method = getMethod(brew.method);
+  const { serving } = method;
+  const size = potSize(brew);
   const unit: MassUnit = prefs.mass;
   const steps = useMemo(() => schedule(brew), [brew]);
   const count = servings(brew);
   const mass = (grams: number, kind: "coffee" | "water") => `${formatMass(grams, unit, kind)} ${unit}`;
-  const suggestedName = `${method.short} · ${mass(brew.coffee, "coffee")} · 1:${formatRatio(brew.ratio)}`;
+  const title = size ? `${method.short} ${size.label}` : method.short;
+  const suggestedName = `${title} · ${mass(brew.coffee, "coffee")} · 1:${formatRatio(brew.ratio)}`;
 
   // Arrow-key step sizes, in whatever unit is showing.
   const coffeeStep = unit === "g" ? 0.5 : 0.05;
   const waterStep = unit === "g" ? 10 : 0.5;
-  const servingStep = method.serving.kind === "coffee" ? 1 : 0.5;
+  const servingStep = serving.kind === "coffee" ? 1 : 0.5;
 
   function save(event: FormEvent) {
     event.preventDefault();
@@ -155,28 +160,41 @@ export function Calculator() {
       </div>
 
       <div className="toolbar">
-        <div className="stepper" role="group" aria-label={`Number of ${method.serving.label}s`}>
-          <button
-            type="button"
-            className="button button-icon"
-            aria-label={`One less ${method.serving.label}`}
-            disabled={count <= servingStep + 1e-9}
-            onClick={() => setBrew((b) => setServings(b, Math.max(servingStep, servings(b) - servingStep)))}
-          >
-            −
-          </button>
-          <span className="stepper-value" aria-live="polite">
-            {formatServings(count)} {plural(count, method.serving.label)}
-          </span>
-          <button
-            type="button"
-            className="button button-icon"
-            aria-label={`One more ${method.serving.label}`}
-            onClick={() => setBrew((b) => setServings(b, servings(b) + servingStep))}
-          >
-            +
-          </button>
-        </div>
+        {serving.kind === "pot" ? (
+          // A pot comes in fixed sizes rather than a number of cups.
+          <Toggle
+            label="Pot size"
+            options={serving.sizes.map((s) => s.label)}
+            value={size?.label ?? null}
+            onChange={(label) => {
+              const picked = serving.sizes.find((s) => s.label === label);
+              if (picked) setBrew((b) => fillPot(b, picked));
+            }}
+          />
+        ) : (
+          <div className="stepper" role="group" aria-label={`Number of ${serving.label}s`}>
+            <button
+              type="button"
+              className="button button-icon"
+              aria-label={`One less ${serving.label}`}
+              disabled={count <= servingStep + 1e-9}
+              onClick={() => setBrew((b) => setServings(b, Math.max(servingStep, servings(b) - servingStep)))}
+            >
+              −
+            </button>
+            <span className="stepper-value" aria-live="polite">
+              {formatServings(count)} {plural(count, serving.label)}
+            </span>
+            <button
+              type="button"
+              className="button button-icon"
+              aria-label={`One more ${serving.label}`}
+              onClick={() => setBrew((b) => setServings(b, servings(b) + servingStep))}
+            >
+              +
+            </button>
+          </div>
+        )}
 
         <div className="toggles">
           <Toggle
@@ -300,7 +318,8 @@ function Toggle<T extends string>({
 }: {
   label: string;
   options: T[];
-  value: T;
+  /** Null when none of the options applies, like a pot filled by hand. */
+  value: T | null;
   onChange: (value: T) => void;
   display?: (option: T) => string;
 }) {

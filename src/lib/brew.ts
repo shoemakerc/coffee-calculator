@@ -1,4 +1,4 @@
-import { getMethod, type Method, type MethodId, type Step } from "./methods";
+import { getMethod, type Method, type MethodId, type PotSize, type Step } from "./methods";
 
 /**
  * A brew is a coffee weight, a water weight, and the ratio between them.
@@ -19,7 +19,9 @@ const positive = (n: number) => Number.isFinite(n) && n > 0;
 export function brewFor(id: MethodId, servings?: number): Brew {
   const method = getMethod(id);
   const base: Brew = { method: id, coffee: 1, water: method.ratio, ratio: method.ratio, lock: "coffee" };
-  return setServings(base, servings ?? method.defaultServings);
+  return method.serving.kind === "pot"
+    ? fillPot(base, method.serving.sizes[0])
+    : setServings(base, servings ?? method.serving.default);
 }
 
 export function setCoffee(brew: Brew, coffee: number): Brew {
@@ -39,31 +41,48 @@ export function setRatio(brew: Brew, ratio: number): Brew {
     : { ...brew, ratio, coffee: brew.water / ratio };
 }
 
-/** How many cups (or shots, or batches) this brew makes. */
+/**
+ * How many cups (or shots, or batches) this brew makes. A pot always makes
+ * one potful: it changes size, not count.
+ */
 export function servings(brew: Brew): number {
   const { serving } = getMethod(brew.method);
+  if (serving.kind === "pot") return 1;
   return (serving.kind === "water" ? brew.water : brew.coffee) / serving.grams;
 }
 
 export function setServings(brew: Brew, count: number): Brew {
-  if (!positive(count)) return brew;
   const { serving } = getMethod(brew.method);
+  if (!positive(count) || serving.kind === "pot") return brew;
   return serving.kind === "water"
     ? setWater(brew, count * serving.grams)
     : setCoffee(brew, count * serving.grams);
 }
 
+/** Fill a pot the usual way: a level basket of coffee, water up to the valve. */
+export function fillPot(brew: Brew, size: PotSize): Brew {
+  return { ...brew, coffee: size.coffee, water: size.water, ratio: size.water / size.coffee, lock: "coffee" };
+}
+
+/** Which pot size these amounts fill, or null once they've been changed by hand. */
+export function potSize(brew: Brew): PotSize | null {
+  const { serving } = getMethod(brew.method);
+  if (serving.kind !== "pot") return null;
+  const near = (a: number, b: number) => Math.abs(a - b) < 0.5;
+  return serving.sizes.find((s) => near(s.coffee, brew.coffee) && near(s.water, brew.water)) ?? null;
+}
+
 /**
  * Switch methods, keeping the size of the brew where it makes sense. Going
  * from a two-cup Chemex to a French press keeps two cups. Espresso is
- * measured in shots, not cups, so switching to or from it starts over at
- * that method's defaults.
+ * measured in shots and a moka pot by its size, not in cups, so switching
+ * to or from either starts over at that method's defaults.
  */
 export function switchMethod(brew: Brew, id: MethodId): Brew {
   if (id === brew.method) return brew;
   const from = getMethod(brew.method);
   const to = getMethod(id);
-  if (from.serving.kind !== to.serving.kind) return brewFor(id);
+  if (from.serving.kind !== to.serving.kind || to.serving.kind === "pot") return brewFor(id);
   const fresh: Brew = { ...brew, method: id, ratio: to.ratio };
   return to.serving.kind === "coffee"
     ? setCoffee(fresh, brew.coffee)
