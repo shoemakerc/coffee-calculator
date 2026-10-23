@@ -21,6 +21,7 @@ export const site = {
     { label: "Spotify", href: "https://open.spotify.com/user/someguy_886" },
     { label: "RateYourMusic", href: "https://rateyourmusic.com/~shoeman27" },
     { label: "Last.fm", href: "https://www.last.fm/user/shoeman27" },
+    { label: "Goodreads", href: "https://www.goodreads.com/user/show/166556608" },
   ],
 };
 
