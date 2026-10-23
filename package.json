@@ -4,7 +4,9 @@
   "private": true,
   "description": "A calculator for making good coffee.",
   "scripts": {
+    "predev": "node scripts/sync-site.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/sync-site.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

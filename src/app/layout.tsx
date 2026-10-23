@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Newsreader, IBM_Plex_Mono } from "next/font/google";
 import { Header, Footer } from "@/components/chrome";
 import { site } from "@/lib/site";
+import "./site-base.css";
 import "./globals.css";
 
 const serif = Newsreader({

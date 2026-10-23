@@ -32,7 +32,8 @@ The app is served at `/coffee-calculator/`, so `basePath` is set in `next.config
 | `src/lib/units.ts` | Unit conversion and number formatting. |
 | `src/lib/storage.ts` | Saved recipes and preferences in localStorage. |
 | `src/components/` | The calculator, the timer, and the header and footer shared with the main site. |
-| `src/app/globals.css` | The top half is copied from the main site's styles. Keep it in step. |
+| `src/app/globals.css` | The calculator's own styles. |
+| `scripts/sync-site.mjs` | Runs before `dev` and `build`. Pulls the main site's nav, footer links and base styles from its `/shared/` files into `src/lib/site-shared.json` and `src/app/site-base.css`. Don't edit those two by hand; change the site instead. |
 
 ## Deploying
 
