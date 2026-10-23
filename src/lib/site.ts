@@ -19,6 +19,8 @@ export const site = {
     { label: "Email", href: "mailto:chriskimshoemaker@gmail.com" },
     { label: "GitHub", href: "https://github.com/shoemakerc" },
     { label: "Spotify", href: "https://open.spotify.com/user/someguy_886" },
+    { label: "RateYourMusic", href: "https://rateyourmusic.com/~shoeman27" },
+    { label: "Last.fm", href: "https://www.last.fm/user/shoeman27" },
   ],
 };
 
