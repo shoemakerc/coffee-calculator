@@ -156,7 +156,7 @@ export const methods: Method[] = [
     ratioRange: [1, 4],
     grind: "Fine, like powdered sugar",
     tempC: 93,
-    serving: { kind: "coffee", grams: 18, label: "shot", default: 1 },
+    serving: { kind: "coffee", grams: 18, label: "double shot", default: 1 },
     timed: true,
     waterIsYield: true,
     yieldNote: "This is a weight target for the cup. Put a scale under it.",
