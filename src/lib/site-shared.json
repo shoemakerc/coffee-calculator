@@ -19,6 +19,10 @@
       "path": "/projects/"
     },
     {
+      "label": "Pastimes",
+      "path": "/pastimes/"
+    },
+    {
       "label": "About",
       "path": "/about/"
     }
