@@ -6,12 +6,14 @@ import {
   brewFor,
   fillPot,
   potSize,
+  roundServings,
   schedule,
   servings,
   setCoffee,
   setRatio,
   setServings,
   setWater,
+  shots,
   switchMethod,
   totalTime,
   type Brew,
@@ -39,7 +41,7 @@ import { Timer } from "./Timer";
 const plural = (n: number, word: string) => (Math.abs(n - 1) < 1e-9 ? word : `${word}s`);
 
 /** Whole servings show as "2"; anything else gets a decimal ("1.5"). */
-const formatServings = (n: number) => String(Number(n.toFixed(1)));
+const formatServings = (n: number) => String(roundServings(n));
 
 export function Calculator() {
   const [brew, setBrew] = useState<Brew>(() => brewFor("v60"));
@@ -54,6 +56,8 @@ export function Calculator() {
   const unit: MassUnit = prefs.mass;
   const steps = useMemo(() => schedule(brew), [brew]);
   const count = servings(brew);
+  // Two or more doubles are pulled one at a time, so their targets are per shot.
+  const each = shots(brew) > 1 ? " each" : "";
   const mass = (grams: number, kind: "coffee" | "water") => `${formatMass(grams, unit, kind)} ${unit}`;
   const title = size ? `${method.short} ${size.label}` : method.short;
   const suggestedName = `${title} · ${mass(brew.coffee, "coffee")} · 1:${formatRatio(brew.ratio)}`;
@@ -231,6 +235,7 @@ export function Calculator() {
           <dd>
             {method.waterIsYield ? "" : "About "}
             {mass(beverageYield(brew), "water")}
+            {each}
             {method.yieldNote && <span className="spec-note">{method.yieldNote}</span>}
           </dd>
         </div>
@@ -245,7 +250,7 @@ export function Calculator() {
           key={brew.method}
           steps={steps}
           timed={method.timed}
-          formatTarget={(g) => mass(g, "water")}
+          formatTarget={(g) => `${mass(g, "water")}${each}`}
           targetLabel={method.waterIsYield ? "Yield" : "Pour to"}
           sound={prefs.sound}
           onToggleSound={() => setPrefs({ sound: !prefs.sound })}

@@ -7,7 +7,7 @@ import { formatAt, formatClock } from "@/lib/units";
 type Props = {
   steps: ScheduledStep[];
   timed: boolean;
-  /** Formats a gram target in the current unit, e.g. "192 g". */
+  /** Formats a gram target in the current unit, e.g. "192 g" or "36 g each". */
   formatTarget: (grams: number) => string;
   /** What a target means: "Pour to" for filter, "Yield" for espresso. */
   targetLabel: string;

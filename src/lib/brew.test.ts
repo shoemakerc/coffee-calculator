@@ -11,6 +11,7 @@ import {
   setRatio,
   setServings,
   setWater,
+  shots,
   switchMethod,
   totalTime,
 } from "./brew";
@@ -65,6 +66,35 @@ describe("servings", () => {
       if (method.serving.kind === "pot") expect(potSize(brew)).toBe(method.serving.sizes[0]);
       else expect(servings(brew)).toBeCloseTo(method.serving.default);
     }
+  });
+});
+
+describe("espresso shots", () => {
+  it("pulls two or more doubles one at a time, each to its own target", () => {
+    const brew = setServings(brewFor("espresso"), 2);
+    expect(shots(brew)).toBe(2);
+    expect(schedule(brew).at(-1)?.target).toBe(36);
+    expect(beverageYield(brew)).toBe(36);
+  });
+
+  it("treats any other dose as one shot", () => {
+    for (const coffee of [18, 20, 27]) {
+      const brew = setCoffee(brewFor("espresso"), coffee);
+      expect(shots(brew)).toBe(1);
+      expect(schedule(brew).at(-1)?.target).toBe(coffee * 2);
+    }
+  });
+
+  it("counts doses the way the stepper shows them", () => {
+    // 1.27 oz is about 36.004 g, which the stepper shows as 2 double shots.
+    expect(shots(setCoffee(brewFor("espresso"), 36.004))).toBe(2);
+    // 37 g shows as 2.1.
+    expect(shots(setCoffee(brewFor("espresso"), 37))).toBe(1);
+  });
+
+  it("never splits other methods", () => {
+    expect(shots(setServings(brewFor("chemex"), 3))).toBe(1);
+    expect(shots(brewFor("moka"))).toBe(1);
   });
 });
 

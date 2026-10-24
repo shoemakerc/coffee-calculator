@@ -59,6 +59,21 @@ export function setServings(brew: Brew, count: number): Brew {
     : setCoffee(brew, count * serving.grams);
 }
 
+/** Servings to one decimal place, the way the stepper shows them. */
+export const roundServings = (count: number) => Number(count.toFixed(1));
+
+/**
+ * How many shots to pull, one after another. Two or more whole doses (as
+ * the stepper rounds them) are separate shots. Any other dose, like 20 g,
+ * is one shot, and every other method is a single brew.
+ */
+export function shots(brew: Brew): number {
+  const { serving } = getMethod(brew.method);
+  if (serving.kind !== "coffee") return 1;
+  const count = roundServings(servings(brew));
+  return Number.isInteger(count) && count > 1 ? count : 1;
+}
+
 /** Fill a pot the usual way: a level basket of coffee, water up to the valve. */
 export function fillPot(brew: Brew, size: PotSize): Brew {
   return { ...brew, coffee: size.coffee, water: size.water, ratio: size.water / size.coffee, lock: "coffee" };
@@ -92,11 +107,14 @@ export function switchMethod(brew: Brew, id: MethodId): Brew {
 /** Grounds hold onto about twice their weight in water. */
 export const ABSORPTION = 2;
 
-/** Roughly how much ends up in the cup (or carafe, or jar). */
+/**
+ * Roughly how much ends up in the cup (or carafe, or jar). Separate shots
+ * each get their own cup.
+ */
 export function beverageYield(brew: Brew): number {
   const method = getMethod(brew.method);
-  if (method.waterIsYield) return brew.water;
-  return Math.max(0, brew.water - brew.coffee * ABSORPTION);
+  const total = method.waterIsYield ? brew.water : Math.max(0, brew.water - brew.coffee * ABSORPTION);
+  return total / shots(brew);
 }
 
 export type ScheduledStep = Step & {
@@ -106,16 +124,22 @@ export type ScheduledStep = Step & {
   duration: number | null;
 };
 
-/** Steps with actual gram targets filled in for this brew. */
+/**
+ * Steps with actual gram targets filled in for this brew. Separate shots
+ * each run through the steps, so their targets are per shot.
+ */
 export function schedule(brew: Brew, method: Method = getMethod(brew.method)): ScheduledStep[] {
+  const n = shots(brew);
+  const coffee = brew.coffee / n;
+  const water = brew.water / n;
   return method.steps.map((step, i) => {
     const next = method.steps[i + 1];
     const duration = next ? next.at - step.at : null;
     if (!step.pour) return { ...step, duration };
     const target =
       step.pour.kind === "bloom"
-        ? Math.min(brew.coffee * step.pour.times, brew.water)
-        : brew.water * step.pour.of;
+        ? Math.min(coffee * step.pour.times, water)
+        : water * step.pour.of;
     return { ...step, target, duration };
   });
 }
