@@ -38,7 +38,11 @@ import { Staff } from "./chrome";
 import { NumberField } from "./NumberField";
 import { Timer } from "./Timer";
 
-const plural = (n: number, word: string) => (Math.abs(n - 1) < 1e-9 ? word : `${word}s`);
+/** "cup" → "cups", "batch" → "batches". */
+const pluralOf = (word: string) => (/(ch|sh|s|x|z)$/.test(word) ? `${word}es` : `${word}s`);
+
+/** Singular only when the stepper shows exactly 1. */
+const plural = (n: number, word: string) => (roundServings(n) === 1 ? word : pluralOf(word));
 
 /** Whole servings show as "2"; anything else gets a decimal ("1.5"). */
 const formatServings = (n: number) => String(roundServings(n));
@@ -176,7 +180,7 @@ export function Calculator() {
             }}
           />
         ) : (
-          <div className="stepper" role="group" aria-label={`Number of ${serving.label}s`}>
+          <div className="stepper" role="group" aria-label={`Number of ${pluralOf(serving.label)}`}>
             <button
               type="button"
               className="button button-icon"
